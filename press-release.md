@@ -10,4 +10,4 @@ Financial institutions process millions of credit card transactions every day an
 This project builds a logistic regression model trained on 284,807 anonymized credit card transactions from European cardholders to predict whether a given transaction is fraudulent. The model is evaluated using precision and recall rather than accuracy, and class imbalance is addressed during training to ensure the model actually learns to detect fraud rather than just predict the majority class. The result is a pipeline that demonstrates how transaction-level fraud detection can work on real-world data.
 
 ## Chart
-(insert chart)
+![Precision-recall curve and confusion matrix for the logistic regression fraud detection model](images/fraud_detection_results.png)
