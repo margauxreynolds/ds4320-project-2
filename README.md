@@ -29,7 +29,7 @@ The general problem of detecting credit card fraud can be approached in many way
 
 ### Press Release Headline and Link
 
-[Can Your Bank Tell When You're Being Robbed? A Data-Driven Look at Credit Card Fraud Detection](press-release.md)
+[Can Your Bank Tell When You're Being Robbed?](press-release.md)
 
 ---
 
@@ -53,7 +53,7 @@ This project lives in the domain of financial technology and fraud prevention. C
 
 ### Background Readings
 
-[OneDrive Folder](https://myuva-my.sharepoint.com/:f:/g/personal/tsh3ut_virginia_edu/IgDoURsNRFGCQ71W3oY9HvZQAdH51juKrIehheiGwwT6bjw)
+[OneDrive Folder](https://myuva-my.sharepoint.com/:f:/g/personal/tsh3ut_virginia_edu/IgCHbQMF7nzmQqDOo-cL8pSBAetUrTAZuCBvatV0QDLvwjc?e=YJExoy)
 
 | # | Title | Description | Link |
 |:--|:------|:------------|:-----|
