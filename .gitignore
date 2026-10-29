@@ -1,2 +1,6 @@
 *.log
 creditcard.csv
+data/
+.env
+.env.*
+.ipynb_checkpoints/
