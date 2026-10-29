@@ -1,6 +1,6 @@
 # Pipeline
 
-This notebook queries the `transactions` collection from MongoDB Atlas, trains a logistic regression model to detect credit card fraud, evaluates performance using precision, recall, and AUPRC, and generates publication-quality visualizations.
+This notebook queries the `transactions` collection from MongoDB Atlas, trains a logistic regression model to detect credit card fraud, evaluates performance using precision, recall, and average precision (AP), and generates visualizations.
 
 
 ```python
@@ -26,22 +26,32 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
+
+from pathlib import Path
+
+# Run from the repository root or the pipeline directory.
+PROJECT_ROOT = Path.cwd().parent if Path.cwd().name == "pipeline" else Path.cwd()
+IMAGE_DIR = PROJECT_ROOT / "images"
+IMAGE_DIR.mkdir(parents=True, exist_ok=True)
 ```
 
 
 ```python
-# Load credentials from environment variables and connect to MongoDB Atlas
+# Connect using a MongoDB URI supplied through the environment
 try:
-    user = os.environ.get("MONGOUSER")
-    password = os.environ.get("MONGOPASS")
-    client = MongoClient(f"mongodb+srv://{user}:{password}@cluster0.kcnfk.mongodb.net/?appName=Cluster0")
-    db = client["ds4320_project2"]
-    collection = db["transactions"]
-    logging.info("Connected to MongoDB Atlas successfully")
+    uri = os.environ.get("MONGODB_URI")
+    if not uri:
+        raise ValueError("Set MONGODB_URI before running this notebook.")
+    client = MongoClient(uri, serverSelectionTimeoutMS=10000)
+    client.admin.command("ping")
+    logging.info("Connected to MongoDB successfully")
     print("Connected successfully")
-except Exception as e:
-    logging.error(f"Failed to connect to MongoDB: {e}")
+except Exception:
+    logging.error("Could not connect to MongoDB; check your configuration.")
     raise
+
+db = client[os.environ.get("MONGODB_DATABASE", "ds4320_project2")]
+collection = db["transactions"]
 ```
 
     Connected successfully
@@ -134,25 +144,29 @@ except Exception as e:
 
 ## Analysis Rationale
 
-Logistic regression was chosen because the problem is binary classification and the model is interpretable. `Amount` and `Time` are scaled using `StandardScaler` before training since they are on different scales than the PCA-derived `V1`-`V28` components. `class_weight='balanced'` is used to account for the extreme class imbalance (0.172% fraud), which adjusts the loss function to penalize missed fraud cases more heavily proportional to their rarity in the training data. SMOTE was not used to avoid introducing synthetic transactions into a dataset already intended to reflect real behavior.
+Logistic regression was chosen for this binary classification problem. Amount and Time are scaled using parameters fitted on the training data only. Class weighting gives the rare fraud class more influence during training without generating synthetic transactions.
 
-The model is evaluated using precision, recall, F1, and AUPRC rather than accuracy. On an imbalanced dataset like this one, a model that predicts every transaction as legitimate would achieve 99.8% accuracy while catching zero fraud, so accuracy is meaningless here. The resulting precision of 0.06 is low by design: `class_weight='balanced'` deliberately shifts the model toward high recall, meaning it flags more transactions as potentially fraudulent and catches 92% of actual fraud cases at the cost of more false positives. In a real fraud detection context, missing a fraudulent transaction is generally more costly than flagging a legitimate one for review, so this tradeoff is intentional and appropriate.
+Accuracy alone can be misleading: predicting every transaction as legitimate would achieve about 99.8% accuracy while detecting no fraud. This model is evaluated using precision, recall, F1, and average precision (AP).
+
+At the default classification threshold, the saved results show 91.8% recall and 6.1% precision: 90 of 98 fraud cases were detected, while 1,386 legitimate transactions were flagged. This demonstrates a substantial false-positive burden. Whether that tradeoff is acceptable depends on fraud costs and review capacity, which this project does not evaluate.
+
+The anonymized PCA features limit interpretation in business terms. These results come from a random split of a two-day historical dataset and do not establish performance on future transactions.
 
 
 ```python
-# Evaluate model using precision, recall, F1, and AUPRC
+# Evaluate model using precision, recall, F1, and AP
 try:
     y_pred = model.predict(X_test_scaled)
     y_prob = model.predict_proba(X_test_scaled)[:, 1]
     precision = precision_score(y_test, y_pred)
     recall = recall_score(y_test, y_pred)
     f1 = f1_score(y_test, y_pred)
-    auprc = average_precision_score(y_test, y_prob)
-    logging.info(f"Precision: {precision:.4f}, Recall: {recall:.4f}, F1: {f1:.4f}, AUPRC: {auprc:.4f}")
+    average_precision = average_precision_score(y_test, y_prob)
+    logging.info(f"Precision: {precision:.4f}, Recall: {recall:.4f}, F1: {f1:.4f}, AP: {average_precision:.4f}")
     print(f"Precision: {precision:.4f}")
     print(f"Recall:    {recall:.4f}")
     print(f"F1 Score:  {f1:.4f}")
-    print(f"AUPRC:     {auprc:.4f}")
+    print(f"AP:     {average_precision:.4f}")
     print("\nClassification Report:")
     print(classification_report(y_test, y_pred, target_names=["Legitimate", "Fraud"]))
 except Exception as e:
@@ -163,7 +177,7 @@ except Exception as e:
     Precision: 0.0610
     Recall:    0.9184
     F1 Score:  0.1144
-    AUPRC:     0.7159
+    AP:     0.7159
     
     Classification Report:
                   precision    recall  f1-score   support
@@ -186,7 +200,7 @@ try:
 
     # Precision-Recall Curve
     precision_vals, recall_vals, _ = precision_recall_curve(y_test, y_prob)
-    axes[0].plot(recall_vals, precision_vals, color="steelblue", lw=2, label=f"AUPRC = {auprc:.4f}")
+    axes[0].plot(recall_vals, precision_vals, color="steelblue", lw=2, label=f"AP = {average_precision:.4f}")
     axes[0].axhline(y=y_test.mean(), color="gray", linestyle="--", label="Baseline")
     axes[0].set_xlabel("Recall", fontsize=12)
     axes[0].set_ylabel("Precision", fontsize=12)
@@ -204,7 +218,7 @@ try:
     axes[1].set_title("Confusion Matrix", fontsize=13)
 
     plt.tight_layout()
-    plt.savefig("../images/fraud_detection_results.png", dpi=300, bbox_inches="tight")
+    plt.savefig(IMAGE_DIR / "fraud_detection_results.png", dpi=300, bbox_inches="tight")
     plt.show()
     logging.info("Visualizations saved to ../images/fraud_detection_results.png")
     print("Visualizations saved")
@@ -224,4 +238,6 @@ except Exception as e:
 
 ## Visualization Rationale
 
-Two visualizations are used to evaluate the model. The precision-recall curve is more informative than an ROC curve for imbalanced datasets because it focuses on the minority class. The AUPRC of 0.7159 is well above the baseline of 0.0017, indicating the model has strong discriminative ability for fraud detection. The confusion matrix shows the model correctly identifies 90 of 98 fraud cases in the test set, with 1,386 false positives, reflecting the tradeoff made by prioritizing recall over precision.
+The precision-recall curve shows performance across thresholds, while the confusion matrix shows results at the default threshold. Average precision is 0.7159, compared with a positive-class prevalence of approximately 0.0017. The model detects 90 of 98 fraud cases and flags 1,386 legitimate transactions.
+
+The saved chart labels average precision as AUPRC. The reported value was calculated using scikit-learn's average_precision_score, rather than trapezoidal integration of the curve.
