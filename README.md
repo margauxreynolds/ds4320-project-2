@@ -5,7 +5,6 @@ This repository contains a complete fraud detection pipeline built on a dataset 
 | Spec | Value |
 |:---|:---|
 | Name | Margaux Reynolds |
-| NetID | tsh3ut |
 | DOI | [https://doi.org/10.5281/zenodo.19698842](https://doi.org/10.5281/zenodo.19698842) |
 | Press Release | [Can Your Bank Tell When You're Being Robbed?](press-release.md) |
 | Pipeline | [Pipeline File](pipeline/pipeline.ipynb) |
@@ -25,7 +24,7 @@ Credit card fraud costs consumers and financial institutions billions of dollars
 
 ### Rationale
 
-The general problem of detecting credit card fraud can be approached in many ways, including account takeover detection, identity verification, or chargeback analysis. Narrowing to transaction-level binary classification makes the problem tractable because a well-established public dataset exists with clearly labeled outcomes. The Kaggle Credit Card Fraud Detection dataset contains 284,807 real anonymized transactions from European cardholders in September 2013, large enough to train a meaningful model while remaining manageable. Logistic regression is a natural fit because the outcome is binary and the model is interpretable enough to reason about which features drive a given prediction, an important property in a domain where explaining a fraud flag to a customer matters.
+The general problem of detecting credit card fraud can be approached in many ways, including account takeover detection, identity verification, or chargeback analysis. Narrowing to transaction-level binary classification makes the problem tractable because a well-established public dataset exists with clearly labeled outcomes. The Kaggle Credit Card Fraud Detection dataset contains 284,807 real anonymized transactions from European cardholders in September 2013, large enough to train a meaningful model while remaining manageable. Logistic regression is a natural fit because the outcome is binary and its coefficients can be inspected, although the anonymized PCA features limit interpretation in business terms.
 
 ### Press Release Headline and Link
 
@@ -53,15 +52,14 @@ This project lives in the domain of financial technology and fraud prevention. C
 
 ### Background Readings
 
-[OneDrive Folder](https://myuva-my.sharepoint.com/:f:/g/personal/tsh3ut_virginia_edu/IgCHbQMF7nzmQqDOo-cL8pSBAetUrTAZuCBvatV0QDLvwjc?e=YJExoy)
 
 | # | Title | Description | Link |
 |:--|:------|:------------|:-----|
-| 1 | A Supervised Machine Learning Algorithm for Detecting and Predicting Fraud in Credit Card Transactions | Peer-reviewed study comparing logistic regression, decision tree, and random forest on a simulated credit card dataset; random forest achieved 96% accuracy and 98.9% AUC. | [link](https://myuva-my.sharepoint.com/:b:/g/personal/tsh3ut_virginia_edu/IQC8AYTNHZA3Q4Tu7QtunMguAeadVmN0GD5LQ8bwa7GncZQ) |
-| 2 | How Common Is Credit Card Fraud? | Experian overview of credit card fraud prevalence, types, and 2024 FTC statistics (~449K reports); provides real-world domain motivation. | [link](https://myuva-my.sharepoint.com/:b:/g/personal/tsh3ut_virginia_edu/IQDfSmFVuLQQRYThzWJ57hdcAYz6TH-Iy3ETDGDYObOX-KE) |
-| 3 | Strategies for Data Imbalance in Fraud Classifiers | Practitioner blog post explaining why class imbalance is the core challenge in fraud classification and comparing SMOTE, undersampling, and SMOTE+ENN approaches. | [link](https://myuva-my.sharepoint.com/:b:/g/personal/tsh3ut_virginia_edu/IQBzHlH-WSgORLQ0VVvhEGisAfyN5MiajbQzsjQPcIt2eqo) |
-| 4 | Imbalanced Classification in Fraud Detection | Medium article walking through precision-recall tradeoffs and balancing algorithm results across six classifiers on a real Kaggle fraud dataset. | [link](https://myuva-my.sharepoint.com/:b:/g/personal/tsh3ut_virginia_edu/IQANKKjcP5eCSaOtmsjMU3wuARa7XHa0-57u1hfesPUhkCU) |
-| 5 | Addressing Digital Finance Challenges: The Application and Optimization of Logistic Regression Models in Fraud Detection Systems | Conference paper applying logistic regression to two real-world fraud datasets; covers feature engineering, SMOTE, regularization, and evaluation metrics. | [link](https://myuva-my.sharepoint.com/:b:/g/personal/tsh3ut_virginia_edu/IQB3Qa-JNH64Rpi8ZD8RCb_8AerkDHqIIr3LNYKk0OIgc2s) |
+| 1 | A Supervised Machine Learning Algorithm for Detecting and Predicting Fraud in Credit Card Transactions | Peer-reviewed study comparing logistic regression, decision tree, and random forest on a simulated credit card dataset; random forest achieved 96% accuracy and 98.9% AUC. |  |
+| 2 | How Common Is Credit Card Fraud? | Experian overview of credit card fraud prevalence, types, and 2024 FTC statistics (~449K reports); provides real-world domain motivation. |  |
+| 3 | Strategies for Data Imbalance in Fraud Classifiers | Practitioner blog post explaining why class imbalance is the core challenge in fraud classification and comparing SMOTE, undersampling, and SMOTE+ENN approaches. |  |
+| 4 | Imbalanced Classification in Fraud Detection | Medium article walking through precision-recall tradeoffs and balancing algorithm results across six classifiers on a real Kaggle fraud dataset. |  |
+| 5 | Addressing Digital Finance Challenges: The Application and Optimization of Logistic Regression Models in Fraud Detection Systems | Conference paper applying logistic regression to two real-world fraud datasets; covers feature engineering, SMOTE, regularization, and evaluation metrics. |  |
 
 ---
 
@@ -81,10 +79,10 @@ The dataset originates from a research collaboration between Worldline and the M
 The dataset reflects only European cardholders over a 48-hour window in September 2013, which limits geographic and temporal generalizability. Because the original features are PCA-transformed and anonymized, it is impossible to assess whether the data overrepresents or underrepresents any cardholder demographic. The extreme class imbalance (0.17% fraud) also reflects real-world conditions but means a naive model will be heavily biased toward predicting the majority class.
 
 ### Bias Mitigation
-Class imbalance is addressed during model training using `class_weight='balanced'` in scikit-learn, which adjusts the logistic regression loss function to penalize missed fraud cases more heavily proportional to their rarity in the training data. Model performance is evaluated using precision, recall, and AUPRC rather than accuracy, which would otherwise give a misleadingly high score on an imbalanced dataset. However, these steps do not fully resolve the bias introduced by the dataset's limited scope. The model is trained exclusively on European cardholders over a 48-hour window in 2013, so its learned decision boundary may not generalize to other regions, time periods, or spending patterns. The PCA anonymization prevents any demographic audit of the training data, meaning it is impossible to verify whether the model performs equally across different cardholder groups. These limitations should be acknowledged when interpreting model results.
+Class imbalance is addressed during model training using `class_weight='balanced'` in scikit-learn, which adjusts the logistic regression loss function to penalize missed fraud cases more heavily proportional to their rarity in the training data. Model performance is evaluated using precision, recall, and average precision (AP) rather than accuracy, which would otherwise give a misleadingly high score on an imbalanced dataset. However, these steps do not fully resolve the bias introduced by the dataset's limited scope. The model is trained exclusively on European cardholders over a 48-hour window in 2013, so its learned decision boundary may not generalize to other regions, time periods, or spending patterns. The PCA anonymization prevents any demographic audit of the training data, meaning it is impossible to verify whether the model performs equally across different cardholder groups. These limitations should be acknowledged when interpreting model results.
 
 ### Rationale for Critical Decisions
-Several judgment calls shape this pipeline. First, storing data in MongoDB suits the structure of a transaction record, which is naturally self-contained: each document represents one transaction and requires no joins. Second, logistic regression was chosen because the outcome is binary and the model is interpretable. A logistic model produces probability scores that map directly onto a fraud/not-fraud decision threshold, which can be adjusted depending on how a bank wants to trade off false positives against false negatives. Third, `class_weight='balanced'` was used rather than SMOTE to avoid introducing synthetic data points into a dataset already intended to reflect real transactions.
+Several judgment calls shape this pipeline. First, storing data in MongoDB suits the structure of a transaction record, which is naturally self-contained: each document represents one transaction and requires no joins. Second, logistic regression was chosen because the outcome is binary and its coefficients can be inspected, with interpretation limited by the anonymized features. A logistic model produces probability scores that map directly onto a fraud/not-fraud decision threshold, which can be adjusted depending on how a bank wants to trade off false positives against false negatives. Third, `class_weight='balanced'` was used rather than SMOTE to avoid introducing synthetic data points into a dataset already intended to reflect real transactions.
 
 The primary source of uncertainty in this pipeline is the anonymization of features: because `V1`–`V28` have no interpretable meaning, it is impossible to audit whether the model is relying on legitimate behavioral signals or artifacts of the PCA transformation.
 
@@ -107,7 +105,7 @@ Each document in the `transactions` collection follows this structure:
 }
 ```
 
-All documents contain all 31 fields. `Class` is always `0` or `1`. `Amount` is always non-negative. `Time` is always non-negative and monotonically increasing within the original dataset. `V1`--`V28` are continuous floats with no guaranteed range (PCA-derived). No nested arrays or subdocuments are used; every field is a scalar.
+Each document contains 31 source fields plus MongoDB's `_id`, for 32 fields total. `Class` is always `0` or `1`. `Amount` is always non-negative. `Time` is always non-negative and monotonically increasing within the original dataset. `V1`--`V28` are continuous floats with no guaranteed range (PCA-derived). No nested arrays or subdocuments are used; every field is a scalar.
 
 ### Data Summary
 
@@ -117,9 +115,9 @@ All documents contain all 31 fields. `Class` is always `0` or `1`. `Amount` is a
 | Total documents | 284,807 |
 | Fraudulent (`Class = 1`) | 492 (0.172%) |
 | Legitimate (`Class = 0`) | 284,315 (99.828%) |
-| Fields per document | 31 |
+| Fields per document | 32, including `_id` |
 | `Time` range | 0 to 172,792 seconds |
-| `Amount` range | $0.00 to $25,691.16 |
+| `Amount` range | €0.00 to €25,691.16 |
  
 
 ### Data Dictionary
@@ -140,4 +138,21 @@ All documents contain all 31 fields. `Class` is always `0` or `1`. `Amount` is a
 | `Time` | 94,814 | 47,488 | 0 | 172,792 | Roughly uniform across 48 hours; no missing values |
 | `Amount` | 88.35 | 250.12 | 0.00 | 25,691.16 | Highly right-skewed; large outliers from rare high-value transactions; should be scaled before modeling |
 | `V1`--`V28` | ~0 | 0.33 to 1.96 | varies | varies | Means are effectively zero by PCA construction; standard deviations vary by component and are not unit variance; no interpretable meaning |
-| `Class` | 0.0017 | 0.041 | 0 | 1 | Binary; uncertainty stems entirely from class imbalance, not measurement error |
+| `Class` | 0.0017 | 0.041 | 0 | 1 | Binary target; rare fraud cases limit the precision of evaluation estimates |
+
+## Results
+
+The saved notebook results use 227,845 training transactions and 56,962 test transactions. At the default threshold, the model detects 90 of 98 fraud cases (91.8% recall) but flags 1,386 legitimate transactions, yielding 6.1% precision. Average precision is 0.7159.
+
+These results illustrate a recall-versus-false-positive tradeoff. Whether the threshold is useful in practice requires information about fraud costs and review capacity, plus validation on later data. The saved chart uses the label AUPRC for the average-precision value.
+
+## Running the notebooks
+
+1. Install `pandas`, `pymongo[srv]`, `scikit-learn`, `matplotlib`, `seaborn`, and `jupyter`.
+2. Download the Credit Card Fraud Detection dataset referenced above and place `creditcard.csv` in `data/`, or set `CREDITCARD_CSV` to its path.
+3. Set `MONGODB_URI` in your environment to your own connection string. Do not commit credentials. Optionally set `MONGODB_DATABASE`; the default is `ds4320_project2`.
+4. Run `pipeline/data_acquisition.ipynb`, then `pipeline/pipeline.ipynb`, from the repository root or the `pipeline` directory.
+
+Acquisition stops if the transactions collection already contains data. To reuse the existing data, skip acquisition; to make a fresh import, use a different database. If an import fails partway through, inspect the collection before retrying.
+
+The analysis notebook retains the original recorded model results. The revised setup has not been verified with a full database import and model rerun.
